@@ -5,26 +5,14 @@ const bodyParser=require('body-parser')
 const {loginTable,movieTable , theatreTable,bookedData} =require('./mongo')
 
 
-// app.use(cors(
-//     {origin: 'http://localhost:3000',
-//     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-//     allowedHeaders: ['Content-Type']}
-// ))
-//app.use(cors({ origin: 'https://movie-ticket-booking-system-frontend.vercel.app' }));
 app.use(cors());
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-const {JWT_SECRET,MONGO_URL}=require('./config/keys')
 
 
-if(process.env.NODE_ENV=='production'){
-  const path=require('path')
-  app.get('/',(req,res)=>{
-    app.use(express.static(path.resolve(__dirname,"frontend","build")))
-    res.sendFile(path.resolve(__dirname,"frontend","build","index.html"))
-  })
-}
+
+
 app.get('/', async (req, res) => {
   try {
     const movies = await movieTable.find({}).sort({ _id: -1 });
@@ -194,14 +182,6 @@ app.get('/myprofile/:id', async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
-if(process.env.NODE_ENV=='production'){
-  const path=require('path')
-  app.get('/',(req,res)=>{
-    app.use(express.static(path.resolve(__dirname,"frontend","build")))
-    res.sendFile(path.resolve(__dirname,"frontend","build","index.html"))
-  })
-}
 
 app.listen(8080,()=>{
     console.log('server running on port 8080')
