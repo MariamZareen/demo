@@ -1,11 +1,6 @@
 const mongoose=require('mongoose')
-//mongodbcompass
-//mongodb://localhost:27017/MovieTicketBooking
 
-//mongodb atlass
-mongoose.connect('mongodb://localhost:27017/MovieTicketBooking')
-//const {JWT_SECRET,MONGO_URL}=require('./config/keys')
-//mongoose.connect(MONGO_URL)
+mongoose.connect('mongodb+srv://mariamzareen184:Mongodb@movieticketbooking.idh14ck.mongodb.net/')
 .then(()=>{
     console.log('database successfully connected')
 })
