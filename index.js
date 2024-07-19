@@ -3,6 +3,7 @@ const app=express();
 const cors=require('cors')
 const bodyParser=require('body-parser')
 const {loginTable,movieTable , theatreTable,bookedData} =require('./mongo')
+const stripe = require("stripe")("sk_test_51Pe7Z2HD6FlPojIANFim85kYqKUYVCX7Q3F1IRSIizC4vqzcCT4XRcIDNgnlINuIDlZorFTMe3cvfZO4Oi4vcXJ000zWfiW8va")
 
 
 app.use(cors());
@@ -10,7 +11,70 @@ app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-
+app.post ('/api/create-checkout-session',async(req,res)=>{
+   const ticket = req.body;
+  //  console.log(ticket)
+   const lineItems= [
+    {
+      price_data : {
+        currency: "inr",
+        product_data:{
+           name: ticket.movieName
+        },
+      unit_amount: ticket.totalCost *100,
+    },
+    quantity: ticket.selectedSeats,
+   }
+  ]
+  //  console.log(lineItems);
+   const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    line_items: lineItems,
+    mode: "payment",
+     success_url: "http://localhost:3000/",
+     cancel_url: "http://localhost:3000/cancel"
+   })
+   try {
+    const user = new bookedData({
+      email:req.body.email,
+      movieName: req.body.movieName,
+      date: req.body.date,
+      day: req.body.day,
+      slot: req.body.slot,
+      theatreName: req.body.theatreName,
+      theatreLocation: req.body.theatreLocation,
+      noOfSeats: req.body.selectedSeats,
+      price: req.body.totalCost,
+    });
+    await user.save();
+    const date=req.body.date.substring(5,6)
+   
+    //console.log(req.body.date.substring(5,6),"this is body date")
+    const theater = await theatreTable.findOneAndUpdate(
+      {
+        "theatre name": req.body.theatreName,
+        "location": req.body.theatreLocation,
+        "movie name": req.body.movieName,
+        "date": date,
+        [`slot.${req.body.slot}`]: { $exists: true } // Check if the key exists in the 'slots' object
+      },
+      {
+        $inc: {
+          [`slot.${req.body.slot}`]: -req.body.noOfSeats,
+        },
+      },
+      { new: true } // Return the modified document
+    );
+    
+    //console.log('Theater data updated:', theater);
+    console.log('Booking data added successfully');
+    res.status(200).json({id: session.id});
+  } catch (error) {
+    console.error("Error saving data to the table via POST:", error);
+    res.status(500).json({id: session.id});
+  }
+   //res.json({id: session.id})
+})
 
 
 app.get('/', async (req, res) => {
